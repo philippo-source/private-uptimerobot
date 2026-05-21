@@ -11,6 +11,20 @@ A small UptimeRobot-style monitor dashboard with a React/Vite frontend, Node/Exp
 - Incident creation and resolution, with a dedicated incidents page.
 - Email alert to `SUPPORT_EMAIL` when a monitor transitions down.
 
+## Email Alerts
+
+Set these values in `.env` to enable email sending:
+
+- `SUPPORT_EMAIL`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER` and `SMTP_PASS` when your provider requires auth
+- `SMTP_EMAIL` and `SMTP_PASSWORD` are also accepted as aliases
+- `SMTP_FROM`
+
+Use the `Test email` button on a monitor detail page to verify SMTP.
+
 ## Setup
 
 1. Create a Postgres database named `uptimerobot`, or run `docker compose up -d postgres`.

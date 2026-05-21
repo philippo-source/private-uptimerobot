@@ -24,5 +24,7 @@ export const api = {
   updateMonitor: (id, data) =>
     request(`/monitors/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteMonitor: (id) => request(`/monitors/${id}`, { method: "DELETE" }),
+  testEmail: (id) => request(`/monitors/${id}/test-email`, { method: "POST" }),
+  emailStatus: () => request("/email/status"),
   incidents: () => request("/incidents")
 };

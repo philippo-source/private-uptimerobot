@@ -8,3 +8,7 @@ export const pool = new pg.Pool({
 export async function query(text, params = []) {
   return pool.query(text, params);
 }
+
+export async function closePool() {
+  await pool.end();
+}

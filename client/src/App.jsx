@@ -8,6 +8,7 @@ import {
   Gauge,
   LayoutDashboard,
   PauseCircle,
+  PlayCircle,
   Plus,
   RefreshCw,
   Search,
@@ -745,7 +746,7 @@ function Dashboard({ openDetail }) {
                 <Sparkline checks={monitor.recentChecks || []} />
                 <span className="uptime">{pct(recentUptime(monitor.recentChecks, monitor.stats.uptimePct))}</span>
                 <button className="icon" onClick={() => togglePause(monitor)} title="Pause or resume">
-                  <PauseCircle size={18} />
+                  {monitor.isPaused ? <PlayCircle size={18} /> : <PauseCircle size={18} />}
                 </button>
                 <button className="icon" onClick={() => setEditing(monitor)} title="Edit monitor">
                   <Edit3 size={18} />
@@ -783,6 +784,8 @@ function MonitorDetail({ id, back }) {
   const [monitor, setMonitor] = useState(null);
   const [editing, setEditing] = useState(null);
   const [selectedRange, setSelectedRange] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   async function load() {
     setMonitor(await api.monitor(id));
@@ -802,6 +805,19 @@ function MonitorDetail({ id, back }) {
     await load();
   }
 
+  async function sendTestNotification() {
+    setSendingEmail(true);
+    try {
+      await api.testEmail(id);
+      setToast({ message: "Test email sent" });
+    } catch (error) {
+      setToast({ message: error.message });
+    } finally {
+      setSendingEmail(false);
+      setTimeout(() => setToast(null), 4200);
+    }
+  }
+
   return (
     <section className="page">
       <button className="back" onClick={back}><ChevronLeft size={18} />Monitoring</button>
@@ -817,8 +833,11 @@ function MonitorDetail({ id, back }) {
           )}
         </div>
         <div className="detail-actions">
+          <button className="ghost" onClick={sendTestNotification} disabled={sendingEmail}>
+            {sendingEmail ? "Sending..." : "Test email"}
+          </button>
           <button className="ghost" onClick={() => api.updateMonitor(id, { isPaused: !monitor.isPaused }).then(load)}>
-            <PauseCircle size={18} />{monitor.isPaused ? "Resume" : "Pause"}
+            {monitor.isPaused ? <PlayCircle size={18} /> : <PauseCircle size={18} />}{monitor.isPaused ? "Resume" : "Pause"}
           </button>
           <button className="ghost" onClick={() => setEditing(monitor)}><Edit3 size={18} />Edit</button>
         </div>
@@ -835,6 +854,7 @@ function MonitorDetail({ id, back }) {
         <IncidentTable incidents={monitor.incidents} compact />
       </div>
       {editing && <MonitorForm monitor={editing} onClose={() => setEditing(null)} onSave={save} />}
+      {toast && <div className="toast" role="status">{toast.message}</div>}
     </section>
   );
 }

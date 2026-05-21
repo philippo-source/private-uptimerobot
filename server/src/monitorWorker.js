@@ -149,3 +149,10 @@ export async function startMonitorWorker() {
   }
   console.log(`Monitor worker scheduled ${monitors.length} monitor(s).`);
 }
+
+export function stopMonitorWorker() {
+  for (const timer of timers.values()) {
+    clearInterval(timer);
+  }
+  timers.clear();
+}

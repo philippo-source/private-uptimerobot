@@ -1,6 +1,7 @@
 import express from "express";
 import { store } from "./db/store.js";
 import { clearMonitor, reloadMonitor } from "./monitorWorker.js";
+import { emailConfigStatus, sendTestEmail } from "./mailer.js";
 
 export const router = express.Router();
 
@@ -38,6 +39,10 @@ function monitorPayload(body) {
 
 router.get("/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+router.get("/email/status", (_req, res) => {
+  res.json(emailConfigStatus());
 });
 
 router.get("/summary", async (_req, res, next) => {
@@ -121,6 +126,18 @@ router.delete("/monitors/:id", async (req, res, next) => {
     clearMonitor(req.params.id);
     if (!ok) return res.status(404).json({ error: "Monitor not found." });
     res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/monitors/:id/test-email", async (req, res, next) => {
+  try {
+    const monitor = await store.getMonitor(req.params.id);
+    if (!monitor) return res.status(404).json({ error: "Monitor not found." });
+
+    await sendTestEmail(monitor);
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }
