@@ -1,10 +1,21 @@
 const API_URL = import.meta.env.VITE_API_URL || "";
 
 async function request(path, options = {}) {
+  const headers = { "Content-Type": "application/json" };
+  const credentials = localStorage.getItem("app_credentials");
+  if (credentials) {
+    headers["Authorization"] = `Basic ${credentials}`;
+  }
+
   const response = await fetch(`${API_URL}/api${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers,
     ...options
   });
+
+  if (response.status === 401) {
+    window.dispatchEvent(new CustomEvent("auth:required"));
+    throw new Error("Unauthorized");
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

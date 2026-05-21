@@ -934,9 +934,79 @@ function IncidentsPage() {
   );
 }
 
+function Login({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const credentials = btoa(`${username}:${password}`);
+    localStorage.setItem("app_credentials", credentials);
+    try {
+      await api.summary();
+      onLogin();
+    } catch (err) {
+      setError("Invalid credentials. Please try again.");
+      localStorage.removeItem("app_credentials");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="login-screen">
+      <form className="login-box" onSubmit={handleSubmit}>
+        <div className="brand"><span />UptimeMonitor</div>
+        <h2>Welcome back</h2>
+        <p className="login-sub">Please sign in to continue.</p>
+        {error && <div className="login-error">{error}</div>}
+        <label>
+          Username (optional)
+          <input 
+            autoComplete="username"
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+          />
+        </label>
+        <label>
+          Password
+          <input 
+            autoComplete="current-password"
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            autoFocus
+          />
+        </label>
+        <button type="submit" className="primary" disabled={loading}>
+          {loading ? "Verifying..." : "Sign in"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export function App() {
   const [page, setPage] = useState("monitors");
   const [detailId, setDetailId] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+
+  useEffect(() => {
+    function handleAuthRequired() {
+      setIsAuthenticated(false);
+    }
+    window.addEventListener("auth:required", handleAuthRequired);
+    return () => window.removeEventListener("auth:required", handleAuthRequired);
+  }, []);
+
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <Shell page={page} setPage={(next) => { setDetailId(null); setPage(next); }}>

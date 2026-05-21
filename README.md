@@ -11,6 +11,16 @@ A small UptimeRobot-style monitor dashboard with a React/Vite frontend, Node/Exp
 - Incident creation and resolution, with a dedicated incidents page.
 - Email alert to `SUPPORT_EMAIL` when a monitor transitions down.
 
+## Authentication
+
+The application features an optional global login screen to protect your dashboard and API. 
+To enable authentication, simply set the following environment variables in your `.env` file (or Vercel project settings):
+
+- `APP_PASSWORD`: The password required to log in.
+- `APP_USERNAME`: (Optional) The username required to log in.
+
+If these variables are omitted, the application will bypass authentication entirely and remain open to the public.
+
 ## Email Alerts
 
 Set these values in `.env` to enable email sending:
@@ -53,6 +63,8 @@ The project is fully pre-configured and optimized to run entirely on **Vercel** 
 3. **Environment Variables**: Add your production variables in the Vercel project settings:
    - `DB_PROVIDER`: `mongodb` or `postgres`
    - `DATABASE_URL` (for Postgres) or `DATABASE_URL_MONGO` (for MongoDB)
+   - `APP_PASSWORD`: (Optional) Your dashboard login password
+   - `APP_USERNAME`: (Optional) Your dashboard login username
    - `SUPPORT_EMAIL`: Your alerts recipient email address
    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (to enable email down alerts)
    - `CRON_SECRET`: (Optional) A secure secret token of your choosing to protect the checks execution endpoint.
