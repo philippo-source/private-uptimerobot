@@ -41,8 +41,29 @@ The frontend runs on `http://localhost:5173`; the backend runs on `http://localh
 
 ## Deployment
 
-For local development, running Postgres with Docker is the simplest option. For deployment, use a hosted database instead, either hosted Postgres or hosted MongoDB. Set the matching `DB_PROVIDER` and database URL in your production environment variables.
+The project is fully pre-configured and optimized to run entirely on **Vercel** as a serverless monorepo (both the Vite React frontend and Node.js Express API).
 
-With a hosted database, the frontend can be deployed to serverless/static hosts like Vercel for free. Configure the frontend host to build the `client` app and publish `client/dist`, then set `VITE_API_URL` to the public URL of the backend API.
+### Deploying to Vercel
 
-The current backend is an Express server with a background monitor worker, so it should run on a Node host that supports long-running processes. If you convert the API and checks to serverless functions or scheduled jobs, the whole project can be adapted to a fully serverless setup.
+1. **Link Project to Vercel**: Connect this monorepo directory to Vercel. Vercel will automatically read the root `vercel.json` file and use the preset configuration.
+2. **Build Configuration**: Vercel handles the monorepo workspace builds using the config defined in `vercel.json`:
+   - **Build Command**: `npm run build --workspace client`
+   - **Output Directory**: `client/dist`
+   - **API Routes**: `/api/*` paths are automatically routed to the serverless function `/api/index.js` which wraps the Express API.
+3. **Environment Variables**: Add your production variables in the Vercel project settings:
+   - `DB_PROVIDER`: `mongodb` or `postgres`
+   - `DATABASE_URL` (for Postgres) or `DATABASE_URL_MONGO` (for MongoDB)
+   - `SUPPORT_EMAIL`: Your alerts recipient email address
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (to enable email down alerts)
+   - `CRON_SECRET`: (Optional) A secure secret token of your choosing to protect the checks execution endpoint.
+
+### Configuring Background Monitor Checks (Cron)
+
+Because Vercel Serverless Functions are stateless and ephemeral, memory-based loops (`setInterval`) do not run continuously in production. Instead, a serverless-friendly cron mechanism is provided:
+
+- **Checks Endpoint**: A stateless check runner is exposed at `/api/cron`.
+- **Set Up Vercel Cron**: To schedule checks to run automatically every minute, add a `crons` definition in your `vercel.json` or configure Vercel Cron in your project dashboard with:
+  - **Path**: `/api/cron`
+  - **Schedule**: `* * * * *` (Runs every minute)
+- **Securing Cron**: If a `CRON_SECRET` environment variable is configured in Vercel, the endpoint will require an `Authorization` header containing `Bearer <CRON_SECRET>` to trigger the checks.
+

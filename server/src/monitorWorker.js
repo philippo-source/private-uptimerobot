@@ -156,3 +156,26 @@ export function stopMonitorWorker() {
   }
   timers.clear();
 }
+
+export async function runCronChecks() {
+  const monitors = await store.listActiveMonitors();
+  const now = Date.now();
+  const promises = [];
+
+  for (const monitor of monitors) {
+    const lastChecked = monitor.last_checked_at ? new Date(monitor.last_checked_at).getTime() : 0;
+    const intervalMs = monitor.interval_seconds * 1000;
+
+    // Check if the monitor has never been checked or is due for its next check (using a 5s buffer)
+    if (now - lastChecked >= intervalMs - 5000) {
+      promises.push(
+        runMonitor(monitor).catch((error) =>
+          console.error(`Cron monitor ${monitor.name} failed:`, error.message)
+        )
+      );
+    }
+  }
+
+  await Promise.all(promises);
+}
+

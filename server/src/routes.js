@@ -1,6 +1,6 @@
 import express from "express";
 import { store } from "./db/store.js";
-import { clearMonitor, reloadMonitor } from "./monitorWorker.js";
+import { clearMonitor, reloadMonitor, runCronChecks } from "./monitorWorker.js";
 import { emailConfigStatus, sendTestEmail } from "./mailer.js";
 
 export const router = express.Router();
@@ -146,6 +146,20 @@ router.post("/monitors/:id/test-email", async (req, res, next) => {
 router.get("/incidents", async (_req, res, next) => {
   try {
     res.json(await store.listIncidents());
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/cron", async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    await runCronChecks();
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }
