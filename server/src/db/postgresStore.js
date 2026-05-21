@@ -5,7 +5,10 @@ function serializeMonitor(row) {
     id: row.id,
     name: row.name,
     url: row.url,
+    tags: row.tags || [],
     method: row.method,
+    authUsername: row.auth_username || "",
+    hasAuth: Boolean(row.auth_username && row.auth_password),
     expectedStatus: row.expected_status,
     intervalSeconds: row.interval_seconds,
     timeoutSeconds: row.timeout_seconds,
@@ -31,7 +34,10 @@ function normalizeMonitor(row) {
     id: row.id,
     name: row.name,
     url: row.url,
+    tags: row.tags || [],
     method: row.method,
+    auth_username: row.auth_username,
+    auth_password: row.auth_password,
     expected_status: row.expected_status,
     interval_seconds: row.interval_seconds,
     timeout_seconds: row.timeout_seconds,
@@ -104,12 +110,15 @@ export const postgresStore = {
 
   async createMonitor(data) {
     const result = await query(
-      `INSERT INTO monitors (name, url, interval_seconds, timeout_seconds, expected_status)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO monitors (name, url, tags, auth_username, auth_password, interval_seconds, timeout_seconds, expected_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         data.name,
         data.url,
+        data.tags,
+        data.authUsername,
+        data.authPassword,
         data.intervalSeconds,
         data.timeoutSeconds,
         data.expectedStatus
@@ -139,12 +148,15 @@ export const postgresStore = {
       `UPDATE monitors
        SET name = COALESCE($2, name),
            url = COALESCE($3, url),
-           interval_seconds = COALESCE($4, interval_seconds),
-           timeout_seconds = COALESCE($5, timeout_seconds),
-           expected_status = COALESCE($6, expected_status),
-           is_paused = COALESCE($7, is_paused),
+           tags = COALESCE($4, tags),
+           auth_username = COALESCE($5, auth_username),
+           auth_password = COALESCE($6, auth_password),
+           interval_seconds = COALESCE($7, interval_seconds),
+           timeout_seconds = COALESCE($8, timeout_seconds),
+           expected_status = COALESCE($9, expected_status),
+           is_paused = COALESCE($10, is_paused),
            status = CASE
-             WHEN COALESCE($7, is_paused) THEN 'paused'
+             WHEN COALESCE($10, is_paused) THEN 'paused'
              WHEN status = 'paused' THEN 'pending'
              ELSE status
            END
@@ -154,6 +166,9 @@ export const postgresStore = {
         id,
         data.name,
         data.url,
+        data.tags,
+        data.authUsername,
+        data.authPassword,
         data.intervalSeconds,
         data.timeoutSeconds,
         data.expectedStatus,

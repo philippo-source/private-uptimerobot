@@ -309,7 +309,7 @@ p {
 }
 
 .row-main strong,
-.row-main span {
+.row-main > span {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -326,6 +326,40 @@ p {
 .uptime,
 small {
   color: var(--muted);
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.row-main > .tag-row {
+  display: flex;
+  overflow: visible;
+  white-space: normal;
+}
+
+.tag-row em {
+  display: inline-flex;
+  align-items: center;
+  max-width: 130px;
+  min-height: 22px;
+  padding: 0 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #263248;
+  color: #b9c9e8;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-tags {
+  margin-top: 12px;
 }
 
 .sparkline {
@@ -626,6 +660,10 @@ tr:last-child td {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+}
+
+.auth-grid {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .modal-actions {

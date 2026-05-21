@@ -13,6 +13,17 @@ function monitorPayload(body) {
   return {
     name: body.name?.trim(),
     url: body.url ? normalizeUrl(body.url.trim()) : undefined,
+    tags: Array.isArray(body.tags)
+      ? body.tags.map((tag) => String(tag).trim()).filter(Boolean)
+      : undefined,
+    authUsername:
+      body.authUsername === undefined || body.authUsername.trim() === ""
+        ? undefined
+        : body.authUsername.trim(),
+    authPassword:
+      body.authPassword === undefined || body.authPassword === ""
+        ? undefined
+        : body.authPassword,
     intervalSeconds:
       body.intervalSeconds === undefined ? undefined : Number(body.intervalSeconds),
     timeoutSeconds:
@@ -54,6 +65,9 @@ router.post("/monitors", async (req, res, next) => {
     const id = await store.createMonitor({
       name: data.name,
       url: data.url,
+      tags: data.tags || [],
+      authUsername: data.authUsername || null,
+      authPassword: data.authPassword || null,
       intervalSeconds: data.intervalSeconds || 60,
       timeoutSeconds: data.timeoutSeconds || 10,
       expectedStatus: data.expectedStatus || 200

@@ -77,6 +77,9 @@ function MonitorForm({ monitor, onClose, onSave }) {
   const [form, setForm] = useState({
     name: monitor?.name || "",
     url: monitor?.url || "",
+    tags: monitor?.tags?.join(", ") || "",
+    authUsername: monitor?.authUsername || "",
+    authPassword: "",
     intervalSeconds: monitor?.intervalSeconds || 60,
     timeoutSeconds: monitor?.timeoutSeconds || 10,
     expectedStatus: monitor?.expectedStatus || 200
@@ -92,7 +95,12 @@ function MonitorForm({ monitor, onClose, onSave }) {
         className="modal"
         onSubmit={(event) => {
           event.preventDefault();
-          onSave(form);
+          const payload = {
+            ...form,
+            tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
+          };
+          if (!payload.authPassword) delete payload.authPassword;
+          onSave(payload);
         }}
       >
         <h2>{monitor ? "Edit monitor" : "New monitor"}</h2>
@@ -104,6 +112,34 @@ function MonitorForm({ monitor, onClose, onSave }) {
           URL
           <input value={form.url} onChange={(e) => update("url", e.target.value)} required />
         </label>
+        <label>
+          Tags
+          <input
+            placeholder="api, production, customer"
+            value={form.tags}
+            onChange={(e) => update("tags", e.target.value)}
+          />
+        </label>
+        <div className="field-grid auth-grid">
+          <label>
+            Login username
+            <input
+              autoComplete="username"
+              value={form.authUsername}
+              onChange={(e) => update("authUsername", e.target.value)}
+            />
+          </label>
+          <label>
+            Login password
+            <input
+              autoComplete="new-password"
+              placeholder={monitor?.hasAuth ? "Saved; type to replace" : ""}
+              type="password"
+              value={form.authPassword}
+              onChange={(e) => update("authPassword", e.target.value)}
+            />
+          </label>
+        </div>
         <div className="field-grid">
           <label>
             Interval
@@ -209,6 +245,11 @@ function Dashboard({ openDetail }) {
                 <button className="row-main" onClick={() => openDetail(monitor.id)}>
                   <strong>{monitor.name}</strong>
                   <span>HTTP · {monitor.status === "paused" ? "Paused" : `Last check ${timeAgo(monitor.lastCheckedAt)}`}</span>
+                  {monitor.tags?.length > 0 && (
+                    <span className="tag-row">
+                      {monitor.tags.slice(0, 3).map((tag) => <em key={tag}>{tag}</em>)}
+                    </span>
+                  )}
                 </button>
                 <span className="interval">{monitor.intervalSeconds / 60} min</span>
                 <Sparkline />
@@ -277,6 +318,11 @@ function MonitorDetail({ id, back }) {
         <div>
           <h1>{monitor.name}<span>.</span></h1>
           <p>HTTP/S monitor for <a href={monitor.url}>{monitor.url}</a></p>
+          {monitor.tags?.length > 0 && (
+            <div className="tag-row detail-tags">
+              {monitor.tags.map((tag) => <em key={tag}>{tag}</em>)}
+            </div>
+          )}
         </div>
         <div className="detail-actions">
           <button className="ghost" onClick={() => api.updateMonitor(id, { isPaused: !monitor.isPaused }).then(load)}>

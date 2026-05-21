@@ -28,8 +28,16 @@ async function checkUrl(monitor) {
   );
 
   try {
+    const headers = {};
+    if (monitor.auth_username && monitor.auth_password) {
+      headers.Authorization = `Basic ${Buffer.from(
+        `${monitor.auth_username}:${monitor.auth_password}`
+      ).toString("base64")}`;
+    }
+
     const response = await fetch(monitor.url, {
       method: monitor.method,
+      headers,
       signal: controller.signal,
       redirect: "follow"
     });

@@ -14,7 +14,10 @@ const statements = [
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     url TEXT NOT NULL,
+    tags TEXT[] NOT NULL DEFAULT '{}',
     method TEXT NOT NULL DEFAULT 'GET',
+    auth_username TEXT,
+    auth_password TEXT,
     expected_status INTEGER NOT NULL DEFAULT 200,
     interval_seconds INTEGER NOT NULL DEFAULT 60 CHECK (interval_seconds >= 30),
     timeout_seconds INTEGER NOT NULL DEFAULT 10 CHECK (timeout_seconds >= 1),
@@ -27,6 +30,9 @@ const statements = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `ALTER TABLE monitors ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}'`,
+  `ALTER TABLE monitors ADD COLUMN IF NOT EXISTS auth_username TEXT`,
+  `ALTER TABLE monitors ADD COLUMN IF NOT EXISTS auth_password TEXT`,
   `CREATE TABLE IF NOT EXISTS checks (
     id BIGSERIAL PRIMARY KEY,
     monitor_id UUID NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,

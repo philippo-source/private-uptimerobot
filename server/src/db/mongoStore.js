@@ -41,7 +41,10 @@ function monitorBase(doc) {
     id: doc.id,
     name: doc.name,
     url: doc.url,
+    tags: doc.tags || [],
     method: doc.method,
+    auth_username: doc.auth_username,
+    auth_password: doc.auth_password,
     expected_status: doc.expected_status,
     interval_seconds: doc.interval_seconds,
     timeout_seconds: doc.timeout_seconds,
@@ -60,7 +63,10 @@ function serializeMonitor(doc, stat) {
     id: doc.id,
     name: doc.name,
     url: doc.url,
+    tags: doc.tags || [],
     method: doc.method,
+    authUsername: doc.auth_username || "",
+    hasAuth: Boolean(doc.auth_username && doc.auth_password),
     expectedStatus: doc.expected_status,
     intervalSeconds: doc.interval_seconds,
     timeoutSeconds: doc.timeout_seconds,
@@ -175,7 +181,10 @@ export const mongoStore = {
       id,
       name: data.name,
       url: data.url,
+      tags: data.tags || [],
       method: "GET",
+      auth_username: data.authUsername || null,
+      auth_password: data.authPassword || null,
       expected_status: data.expectedStatus,
       interval_seconds: data.intervalSeconds,
       timeout_seconds: data.timeoutSeconds,
@@ -220,6 +229,9 @@ export const mongoStore = {
     const set = { updated_at: new Date() };
     if (data.name !== undefined) set.name = data.name;
     if (data.url !== undefined) set.url = data.url;
+    if (data.tags !== undefined) set.tags = data.tags;
+    if (data.authUsername !== undefined) set.auth_username = data.authUsername;
+    if (data.authPassword !== undefined) set.auth_password = data.authPassword;
     if (data.intervalSeconds !== undefined) set.interval_seconds = data.intervalSeconds;
     if (data.timeoutSeconds !== undefined) set.timeout_seconds = data.timeoutSeconds;
     if (data.expectedStatus !== undefined) set.expected_status = data.expectedStatus;
