@@ -20,6 +20,7 @@ function serializeMonitor(row) {
     lastResponseTimeMs: row.last_response_time_ms,
     lastError: row.last_error,
     createdAt: row.created_at,
+    recentChecks: row.recent_checks || [],
     stats: {
       min: row.min_response_ms === null ? null : Number(row.min_response_ms),
       max: row.max_response_ms === null ? null : Number(row.max_response_ms),
@@ -60,7 +61,22 @@ async function monitorWithStats(where = "", params = []) {
             MAX(c.response_time_ms) FILTER (WHERE c.status = 'up') AS max_response_ms,
             AVG(c.response_time_ms) FILTER (WHERE c.status = 'up') AS avg_response_ms,
             COUNT(c.id) AS total_checks,
-            COALESCE(ROUND(100.0 * COUNT(c.id) FILTER (WHERE c.status = 'up') / NULLIF(COUNT(c.id), 0), 3), 0) AS uptime_pct
+            COALESCE(ROUND(100.0 * COUNT(c.id) FILTER (WHERE c.status = 'up') / NULLIF(COUNT(c.id), 0), 3), 0) AS uptime_pct,
+            COALESCE((
+              SELECT json_agg(json_build_object(
+                'status', rc.status,
+                'checked_at', rc.checked_at,
+                'response_time_ms', rc.response_time_ms
+              ) ORDER BY rc.checked_at ASC)
+              FROM (
+                SELECT status, checked_at, response_time_ms
+                FROM checks
+                WHERE monitor_id = m.id
+                  AND checked_at >= NOW() - INTERVAL '24 hours'
+                ORDER BY checked_at ASC
+                LIMIT 96
+              ) rc
+            ), '[]'::json) AS recent_checks
      FROM monitors m
      LEFT JOIN checks c ON c.monitor_id = m.id
      ${where}
@@ -188,7 +204,7 @@ export const postgresStore = {
     return result.rowCount > 0;
   },
 
-  async getChecks(monitorId, limit = 120) {
+  async getChecks(monitorId, limit = 50000) {
     const result = await query(
       `SELECT status, status_code, response_time_ms, error, checked_at
        FROM checks
@@ -200,7 +216,7 @@ export const postgresStore = {
     return result.rows.reverse();
   },
 
-  async getMonitorIncidents(monitorId, limit = 20) {
+  async getMonitorIncidents(monitorId, limit = 5000) {
     const result = await query(
       `SELECT *
        FROM incidents

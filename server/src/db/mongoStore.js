@@ -59,7 +59,7 @@ function monitorBase(doc) {
   };
 }
 
-function serializeMonitor(doc, stat) {
+function serializeMonitor(doc, stat, recentChecks = []) {
   return {
     id: doc.id,
     name: doc.name,
@@ -79,6 +79,7 @@ function serializeMonitor(doc, stat) {
     lastResponseTimeMs: doc.last_response_time_ms,
     lastError: doc.last_error,
     createdAt: doc.created_at,
+    recentChecks,
     stats: {
       min: stat?.min ?? null,
       max: stat?.max ?? null,
@@ -171,8 +172,22 @@ export const mongoStore = {
       .find({})
       .sort({ is_paused: 1, status: 1, created_at: -1 })
       .toArray();
-    const stats = await statsFor(checks, rows.map((row) => row.id));
-    return rows.map((row) => serializeMonitor(row, stats.get(row.id)));
+    const monitorIds = rows.map((row) => row.id);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [stats, recentRows] = await Promise.all([
+      statsFor(checks, monitorIds),
+      checks
+        .find({ monitor_id: { $in: monitorIds }, checked_at: { $gte: since } })
+        .project({ _id: 0, monitor_id: 1, status: 1, checked_at: 1, response_time_ms: 1 })
+        .sort({ checked_at: 1 })
+        .toArray()
+    ]);
+    const recentMap = new Map(monitorIds.map((id) => [id, []]));
+    for (const check of recentRows) {
+      const bucket = recentMap.get(check.monitor_id);
+      if (bucket && bucket.length < 96) bucket.push(check);
+    }
+    return rows.map((row) => serializeMonitor(row, stats.get(row.id), recentMap.get(row.id) || []));
   },
 
   async createMonitor(data) {
@@ -261,7 +276,7 @@ export const mongoStore = {
     return result.deletedCount > 0;
   },
 
-  async getChecks(monitorId, limit = 120) {
+  async getChecks(monitorId, limit = 50000) {
     const database = await getMongoDb();
     return collections(database).checks
       .find({ monitor_id: monitorId })
@@ -272,7 +287,7 @@ export const mongoStore = {
       .then((rows) => rows.reverse());
   },
 
-  async getMonitorIncidents(monitorId, limit = 20) {
+  async getMonitorIncidents(monitorId, limit = 5000) {
     const database = await getMongoDb();
     return collections(database).incidents
       .find({ monitor_id: monitorId })
