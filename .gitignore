@@ -7,4 +7,5 @@ dev.full.log
 client/dist
 client/dist/index.html
 /dist
+*.log
 

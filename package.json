@@ -7,6 +7,7 @@
     "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
     "check": "npm run check --workspace server && npm run check --workspace client",
     "render": "npm run build --workspace client",
+    "build": "npm run build --workspace client",
     "db:migrate": "npm run db:migrate --workspace server"
   },
   "workspaces": [
