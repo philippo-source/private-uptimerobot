@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build --workspace client",
-  "outputDirectory": "client/dist",
+  "buildCommand": "npm run build --workspace client && mkdir -p dist && cp -r client/dist/* dist/",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/(.*)",
