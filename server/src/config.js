@@ -4,9 +4,11 @@ dotenv.config({ path: new URL("../../.env", import.meta.url) });
 
 export const config = {
   port: Number(process.env.PORT || 4000),
+  dbProvider: (process.env.DB_PROVIDER || "postgres").toLowerCase(),
   databaseUrl:
     process.env.DATABASE_URL ||
     "postgres://postgres:postgres@localhost:5432/uptimerobot",
+  databaseUrlMongo: process.env.DATABASE_URL_MONGO || "",
   supportEmail: process.env.SUPPORT_EMAIL || "",
   smtp: {
     host: process.env.SMTP_HOST || "",

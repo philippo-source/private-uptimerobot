@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { config } from "./config.js";
+import { initStore } from "./db/store.js";
 import { router } from "./routes.js";
 import { startMonitorWorker } from "./monitorWorker.js";
 
@@ -17,5 +18,6 @@ app.use((error, _req, res, _next) => {
 
 app.listen(config.port, async () => {
   console.log(`API listening on http://localhost:${config.port}`);
+  await initStore();
   await startMonitorWorker();
 });

@@ -1,4 +1,4 @@
-import { query } from "./db/pool.js";
+import { store } from "./db/store.js";
 import { sendDownAlert } from "./mailer.js";
 
 const timers = new Map();
@@ -57,87 +57,39 @@ async function checkUrl(monitor) {
 }
 
 async function recordCheck(monitor, result) {
-  await query(
-    `INSERT INTO checks (monitor_id, status, status_code, response_time_ms, error)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [
-      monitor.id,
-      result.status,
-      result.statusCode,
-      result.responseTimeMs,
-      result.error
-    ]
-  );
-
-  await query(
-    `UPDATE monitors
-     SET status = $2,
-         last_checked_at = NOW(),
-         last_status_code = $3,
-         last_response_time_ms = $4,
-         last_error = $5
-     WHERE id = $1`,
-    [
-      monitor.id,
-      result.status,
-      result.statusCode,
-      result.responseTimeMs,
-      result.error
-    ]
-  );
+  await store.recordCheck(monitor, result);
 }
 
 async function handleIncident(monitor, result) {
-  const openIncident = await query(
-    `SELECT * FROM incidents
-     WHERE monitor_id = $1 AND status = 'open'
-     ORDER BY started_at DESC
-     LIMIT 1`,
-    [monitor.id]
-  );
+  const openIncident = await store.findOpenIncident(monitor.id);
 
-  if (result.status === "down" && openIncident.rowCount === 0) {
-    const created = await query(
-      `INSERT INTO incidents (monitor_id, root_cause, status_code, error)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [
-        monitor.id,
-        classifyFailure(result),
-        result.statusCode,
-        result.error
-      ]
-    );
+  if (result.status === "down" && !openIncident) {
+    const incident = await store.createIncident(monitor.id, {
+      rootCause: classifyFailure(result),
+      statusCode: result.statusCode,
+      error: result.error
+    });
 
     try {
       const sent = await sendDownAlert({
         monitor,
-        incident: created.rows[0]
+        incident
       });
       if (sent) {
-        await query(
-          `UPDATE incidents SET notification_sent_at = NOW() WHERE id = $1`,
-          [created.rows[0].id]
-        );
+        await store.markIncidentNotified(incident.id);
       }
     } catch (error) {
       console.error(`Failed to send alert for ${monitor.name}:`, error.message);
     }
   }
 
-  if (result.status === "up" && openIncident.rowCount > 0) {
-    await query(
-      `UPDATE incidents
-       SET status = 'resolved', resolved_at = NOW()
-       WHERE id = $1`,
-      [openIncident.rows[0].id]
-    );
+  if (result.status === "up" && openIncident) {
+    await store.resolveIncident(openIncident.id);
   }
 }
 
 async function runMonitor(monitor) {
-  const fresh = await query(`SELECT * FROM monitors WHERE id = $1`, [monitor.id]);
-  const current = fresh.rows[0];
+  const current = await store.getRawMonitor(monitor.id);
   if (!current || current.is_paused) return;
 
   const result = await checkUrl(current);
@@ -167,21 +119,19 @@ export function clearMonitor(id) {
 }
 
 export async function reloadMonitor(id) {
-  const result = await query(`SELECT * FROM monitors WHERE id = $1`, [id]);
-  if (result.rowCount === 0) {
+  const monitor = await store.getRawMonitor(id);
+  if (!monitor) {
     clearMonitor(id);
     return;
   }
 
-  scheduleMonitor(result.rows[0]);
+  scheduleMonitor(monitor);
 }
 
 export async function startMonitorWorker() {
-  const result = await query(
-    `SELECT * FROM monitors WHERE is_paused = FALSE ORDER BY created_at ASC`
-  );
-  for (const monitor of result.rows) {
+  const monitors = await store.listActiveMonitors();
+  for (const monitor of monitors) {
     scheduleMonitor(monitor);
   }
-  console.log(`Monitor worker scheduled ${result.rowCount} monitor(s).`);
+  console.log(`Monitor worker scheduled ${monitors.length} monitor(s).`);
 }

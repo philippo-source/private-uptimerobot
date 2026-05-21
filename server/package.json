@@ -7,13 +7,14 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "check": "node --check src/index.js && node --check src/routes.js && node --check src/monitorWorker.js && node --check src/db/migrate.js",
+    "check": "node --check src/index.js && node --check src/routes.js && node --check src/monitorWorker.js && node --check src/db/postgresStore.js && node --check src/db/mongoStore.js && node --check src/db/migrate.js",
     "db:migrate": "node src/db/migrate.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "mongodb": "^6.12.0",
     "nodemailer": "^6.9.16",
     "pg": "^8.13.1"
   }

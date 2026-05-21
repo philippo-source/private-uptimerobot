@@ -1,4 +1,12 @@
+import { config } from "../config.js";
+import { initStore } from "./store.js";
 import { pool } from "./pool.js";
+
+if (config.dbProvider === "mongodb") {
+  await initStore();
+  console.log("MongoDB indexes migrated.");
+  process.exit(0);
+}
 
 const statements = [
   `CREATE EXTENSION IF NOT EXISTS pgcrypto`,
