@@ -1,0 +1,28 @@
+const API_URL = import.meta.env.VITE_API_URL || "";
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_URL}/api${path}`, {
+    headers: { "Content-Type": "application/json" },
+    ...options
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Request failed");
+  }
+
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+export const api = {
+  summary: () => request("/summary"),
+  monitors: () => request("/monitors"),
+  monitor: (id) => request(`/monitors/${id}`),
+  createMonitor: (data) =>
+    request("/monitors", { method: "POST", body: JSON.stringify(data) }),
+  updateMonitor: (id, data) =>
+    request(`/monitors/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteMonitor: (id) => request(`/monitors/${id}`, { method: "DELETE" }),
+  incidents: () => request("/incidents")
+};

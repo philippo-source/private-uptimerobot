@@ -1,0 +1,22 @@
+
+> uptimerobot-clone@1.0.0 dev
+> concurrently "npm run dev --workspace server" "npm run dev --workspace client"
+
+[1] 
+[1] > client@1.0.0 dev
+[1] > vite --host 0.0.0.0
+[1] 
+[0] 
+[0] > server@1.0.0 dev
+[0] > node --watch src/index.js
+[0] 
+[0] API listening on http://localhost:4000
+[0] Monitor worker scheduled 0 monitor(s).
+[1] 
+[1]   [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m2222[22m[2m[0m ms[22m
+[1] 
+[1]   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.56.1:[1m5173[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.149.2:[1m5173[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.100.4:[1m5173[22m/[39m
+[1]   [32m➜[39m  [1mNetwork[22m: [36mhttp://172.22.48.1:[1m5173[22m/[39m
