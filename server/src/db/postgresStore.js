@@ -10,6 +10,7 @@ function serializeMonitor(row) {
     authUsername: row.auth_username || "",
     hasAuth: Boolean(row.auth_username && row.auth_password),
     expectedStatus: row.expected_status,
+    expectedBody: row.expected_body || "",
     intervalSeconds: row.interval_seconds,
     timeoutSeconds: row.timeout_seconds,
     status: row.is_paused ? "paused" : row.status,
@@ -39,6 +40,7 @@ function normalizeMonitor(row) {
     auth_username: row.auth_username,
     auth_password: row.auth_password,
     expected_status: row.expected_status,
+    expected_body: row.expected_body,
     interval_seconds: row.interval_seconds,
     timeout_seconds: row.timeout_seconds,
     status: row.status,
@@ -110,8 +112,8 @@ export const postgresStore = {
 
   async createMonitor(data) {
     const result = await query(
-      `INSERT INTO monitors (name, url, tags, auth_username, auth_password, interval_seconds, timeout_seconds, expected_status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO monitors (name, url, tags, auth_username, auth_password, interval_seconds, timeout_seconds, expected_status, expected_body)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         data.name,
@@ -121,7 +123,8 @@ export const postgresStore = {
         data.authPassword,
         data.intervalSeconds,
         data.timeoutSeconds,
-        data.expectedStatus
+        data.expectedStatus,
+        data.expectedBody
       ]
     );
     return result.rows[0].id;
@@ -154,9 +157,10 @@ export const postgresStore = {
            interval_seconds = COALESCE($7, interval_seconds),
            timeout_seconds = COALESCE($8, timeout_seconds),
            expected_status = COALESCE($9, expected_status),
-           is_paused = COALESCE($10, is_paused),
+           expected_body = COALESCE($10, expected_body),
+           is_paused = COALESCE($11, is_paused),
            status = CASE
-             WHEN COALESCE($10, is_paused) THEN 'paused'
+             WHEN COALESCE($11, is_paused) THEN 'paused'
              WHEN status = 'paused' THEN 'pending'
              ELSE status
            END
@@ -172,6 +176,7 @@ export const postgresStore = {
         data.intervalSeconds,
         data.timeoutSeconds,
         data.expectedStatus,
+        data.expectedBody,
         data.isPaused
       ]
     );

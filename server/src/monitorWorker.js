@@ -42,15 +42,21 @@ async function checkUrl(monitor) {
       redirect: "follow"
     });
     const responseTimeMs = Math.round(performance.now() - started);
-    const isUp =
+    const statusMatches =
       response.status >= monitor.expected_status &&
       response.status < monitor.expected_status + 100;
+    let bodyMatches = true;
+
+    if (monitor.expected_body) {
+      const body = await response.text();
+      bodyMatches = body.includes(monitor.expected_body);
+    }
 
     return {
-      status: isUp ? "up" : "down",
+      status: statusMatches && bodyMatches ? "up" : "down",
       statusCode: response.status,
       responseTimeMs,
-      error: null
+      error: bodyMatches ? null : "Expected response body was not found"
     };
   } catch (error) {
     return {

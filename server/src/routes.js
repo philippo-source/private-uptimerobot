@@ -30,6 +30,8 @@ function monitorPayload(body) {
       body.timeoutSeconds === undefined ? undefined : Number(body.timeoutSeconds),
     expectedStatus:
       body.expectedStatus === undefined ? undefined : Number(body.expectedStatus),
+    expectedBody:
+      body.expectedBody === undefined ? undefined : body.expectedBody.trim(),
     isPaused: body.isPaused
   };
 }
@@ -70,7 +72,8 @@ router.post("/monitors", async (req, res, next) => {
       authPassword: data.authPassword || null,
       intervalSeconds: data.intervalSeconds || 60,
       timeoutSeconds: data.timeoutSeconds || 10,
-      expectedStatus: data.expectedStatus || 200
+      expectedStatus: data.expectedStatus || 200,
+      expectedBody: data.expectedBody || null
     });
 
     await reloadMonitor(id);

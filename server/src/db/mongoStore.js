@@ -46,6 +46,7 @@ function monitorBase(doc) {
     auth_username: doc.auth_username,
     auth_password: doc.auth_password,
     expected_status: doc.expected_status,
+    expected_body: doc.expected_body,
     interval_seconds: doc.interval_seconds,
     timeout_seconds: doc.timeout_seconds,
     status: doc.status,
@@ -68,6 +69,7 @@ function serializeMonitor(doc, stat) {
     authUsername: doc.auth_username || "",
     hasAuth: Boolean(doc.auth_username && doc.auth_password),
     expectedStatus: doc.expected_status,
+    expectedBody: doc.expected_body || "",
     intervalSeconds: doc.interval_seconds,
     timeoutSeconds: doc.timeout_seconds,
     status: doc.is_paused ? "paused" : doc.status,
@@ -186,6 +188,7 @@ export const mongoStore = {
       auth_username: data.authUsername || null,
       auth_password: data.authPassword || null,
       expected_status: data.expectedStatus,
+      expected_body: data.expectedBody || null,
       interval_seconds: data.intervalSeconds,
       timeout_seconds: data.timeoutSeconds,
       status: "pending",
@@ -235,6 +238,7 @@ export const mongoStore = {
     if (data.intervalSeconds !== undefined) set.interval_seconds = data.intervalSeconds;
     if (data.timeoutSeconds !== undefined) set.timeout_seconds = data.timeoutSeconds;
     if (data.expectedStatus !== undefined) set.expected_status = data.expectedStatus;
+    if (data.expectedBody !== undefined) set.expected_body = data.expectedBody;
     if (data.isPaused !== undefined) {
       set.is_paused = data.isPaused;
       set.status = data.isPaused ? "paused" : "pending";

@@ -77,48 +77,105 @@ function MonitorForm({ monitor, onClose, onSave }) {
   const [form, setForm] = useState({
     name: monitor?.name || "",
     url: monitor?.url || "",
-    tags: monitor?.tags?.join(", ") || "",
+    tags: monitor?.tags || [],
+    tagDraft: "",
     authUsername: monitor?.authUsername || "",
     authPassword: "",
     intervalSeconds: monitor?.intervalSeconds || 60,
     timeoutSeconds: monitor?.timeoutSeconds || 10,
-    expectedStatus: monitor?.expectedStatus || 200
+    expectedStatus: monitor?.expectedStatus || 200,
+    expectedBody: monitor?.expectedBody || ""
   });
+  const [nameTouched, setNameTouched] = useState(Boolean(monitor?.name));
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function updateUrl(value) {
+    setForm((current) => ({
+      ...current,
+      url: value,
+      name: nameTouched ? current.name : value
+    }));
+  }
+
+  function updateName(value) {
+    setNameTouched(true);
+    update("name", value);
+  }
+
+  function addTag() {
+    const tag = form.tagDraft.trim();
+    if (!tag || form.tags.includes(tag)) return;
+    setForm((current) => ({
+      ...current,
+      tags: [...current.tags, tag],
+      tagDraft: ""
+    }));
+  }
+
+  function removeTag(tag) {
+    setForm((current) => ({
+      ...current,
+      tags: current.tags.filter((item) => item !== tag)
+    }));
+  }
+
   return (
-    <div className="modal-backdrop">
+    <div className="modal-backdrop" onMouseDown={onClose}>
       <form
         className="modal"
+        onMouseDown={(event) => event.stopPropagation()}
         onSubmit={(event) => {
           event.preventDefault();
+          const draft = form.tagDraft.trim();
           const payload = {
             ...form,
-            tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
+            tags: draft && !form.tags.includes(draft)
+              ? [...form.tags, draft]
+              : form.tags
           };
+          delete payload.tagDraft;
           if (!payload.authPassword) delete payload.authPassword;
           onSave(payload);
         }}
       >
         <h2>{monitor ? "Edit monitor" : "New monitor"}</h2>
         <label>
-          Name
-          <input value={form.name} onChange={(e) => update("name", e.target.value)} required />
+          URL <span className="required">required</span>
+          <input
+            autoFocus
+            placeholder="https://example.com"
+            value={form.url}
+            onChange={(e) => updateUrl(e.target.value)}
+            required
+          />
         </label>
         <label>
-          URL
-          <input value={form.url} onChange={(e) => update("url", e.target.value)} required />
+          Name
+          <input value={form.name} onChange={(e) => updateName(e.target.value)} required />
         </label>
         <label>
           Tags
-          <input
-            placeholder="api, production, customer"
-            value={form.tags}
-            onChange={(e) => update("tags", e.target.value)}
-          />
+          <div className="tag-input">
+            {form.tags.map((tag) => (
+              <button type="button" key={tag} onClick={() => removeTag(tag)}>
+                {tag}<span aria-hidden="true">x</span>
+              </button>
+            ))}
+            <input
+              placeholder="Add tag and press Enter"
+              value={form.tagDraft}
+              onChange={(e) => update("tagDraft", e.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addTag();
+                }
+              }}
+            />
+          </div>
         </label>
         <div className="field-grid auth-grid">
           <label>
@@ -173,6 +230,14 @@ function MonitorForm({ monitor, onClose, onSave }) {
             />
           </label>
         </div>
+        <label>
+          Expected response body
+          <textarea
+            placeholder="Optional text that must be present in the response"
+            value={form.expectedBody}
+            onChange={(e) => update("expectedBody", e.target.value)}
+          />
+        </label>
         <div className="modal-actions">
           <button type="button" className="ghost" onClick={onClose}>Cancel</button>
           <button type="submit" className="primary">Save</button>

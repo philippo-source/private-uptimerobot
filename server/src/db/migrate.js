@@ -19,6 +19,7 @@ const statements = [
     auth_username TEXT,
     auth_password TEXT,
     expected_status INTEGER NOT NULL DEFAULT 200,
+    expected_body TEXT,
     interval_seconds INTEGER NOT NULL DEFAULT 60 CHECK (interval_seconds >= 30),
     timeout_seconds INTEGER NOT NULL DEFAULT 10 CHECK (timeout_seconds >= 1),
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'up', 'down', 'paused')),
@@ -33,6 +34,7 @@ const statements = [
   `ALTER TABLE monitors ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}'`,
   `ALTER TABLE monitors ADD COLUMN IF NOT EXISTS auth_username TEXT`,
   `ALTER TABLE monitors ADD COLUMN IF NOT EXISTS auth_password TEXT`,
+  `ALTER TABLE monitors ADD COLUMN IF NOT EXISTS expected_body TEXT`,
   `CREATE TABLE IF NOT EXISTS checks (
     id BIGSERIAL PRIMARY KEY,
     monitor_id UUID NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
