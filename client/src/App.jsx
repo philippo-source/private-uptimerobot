@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
-  Bell,
   CheckCircle2,
   ChevronLeft,
   Edit3,
@@ -12,8 +11,7 @@ import {
   Plus,
   RefreshCw,
   Search,
-  ShieldAlert,
-  Trash2
+  ShieldAlert
 } from "lucide-react";
 import { api } from "./lib/api.js";
 import { dateTime, duration, ms, pct, timeAgo } from "./lib/format.js";
@@ -253,12 +251,18 @@ function Dashboard({ openDetail }) {
   const [filter, setFilter] = useState("");
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   async function load() {
-    const [monitorRows, summaryRow] = await Promise.all([api.monitors(), api.summary()]);
-    setMonitors(monitorRows);
-    setSummary(summaryRow);
-    setLoading(false);
+    setRefreshing(true);
+    try {
+      const [monitorRows, summaryRow] = await Promise.all([api.monitors(), api.summary()]);
+      setMonitors(monitorRows);
+      setSummary(summaryRow);
+      setLoading(false);
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   useEffect(() => {
@@ -297,7 +301,9 @@ function Dashboard({ openDetail }) {
         <div>
           <div className="toolbar">
             <div className="search"><Search size={18} /><input placeholder="Search by name or URL" value={filter} onChange={(e) => setFilter(e.target.value)} /></div>
-            <button className="ghost" onClick={load}><RefreshCw size={18} />Refresh</button>
+            <button className="ghost" onClick={load} disabled={refreshing}>
+              <RefreshCw className={refreshing ? "spin" : ""} size={18} />Refresh
+            </button>
           </div>
           <div className="monitor-list">
             {loading && <div className="empty">Loading monitors...</div>}
@@ -443,12 +449,12 @@ function IncidentTable({ incidents, compact = false }) {
           )}
           {incidents.map((incident) => (
             <tr key={incident.id}>
-              <td><span className={`incident ${incident.status}`}>{incident.status === "resolved" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}{incident.status}</span></td>
-              {!compact && <td><strong>{incident.monitor_name}</strong><small>{incident.monitor_url}</small></td>}
-              <td><span className="code">{incident.status_code || "ERR"}</span> {incident.root_cause}</td>
-              <td>{dateTime(incident.started_at)}</td>
-              <td>{incident.resolved_at ? dateTime(incident.resolved_at) : "Open"}</td>
-              <td>{duration(incident.started_at, incident.resolved_at || new Date())}</td>
+              <td data-label="Status"><span className={`incident ${incident.status}`}>{incident.status === "resolved" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}{incident.status}</span></td>
+              {!compact && <td data-label="Monitor"><strong>{incident.monitor_name}</strong><small>{incident.monitor_url}</small></td>}
+              <td data-label="Root cause"><span className="code">{incident.status_code || "ERR"}</span> {incident.root_cause}</td>
+              <td data-label="Started">{dateTime(incident.started_at)}</td>
+              <td data-label="Resolved">{incident.resolved_at ? dateTime(incident.resolved_at) : "Open"}</td>
+              <td data-label="Duration">{duration(incident.started_at, incident.resolved_at || new Date())}</td>
             </tr>
           ))}
         </tbody>
@@ -460,9 +466,15 @@ function IncidentTable({ incidents, compact = false }) {
 function IncidentsPage() {
   const [incidents, setIncidents] = useState([]);
   const [filter, setFilter] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   async function load() {
-    setIncidents(await api.incidents());
+    setRefreshing(true);
+    try {
+      setIncidents(await api.incidents());
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   useEffect(() => {
@@ -479,7 +491,9 @@ function IncidentsPage() {
     <section className="page">
       <div className="page-header">
         <h1>Incidents<span>.</span></h1>
-        <button className="ghost" onClick={load}><Bell size={18} />Refresh</button>
+        <button className="ghost" onClick={load} disabled={refreshing}>
+          <RefreshCw className={refreshing ? "spin" : ""} size={18} />Refresh
+        </button>
       </div>
       <div className="toolbar">
         <div className="search"><Search size={18} /><input placeholder="Search by name or URL" value={filter} onChange={(e) => setFilter(e.target.value)} /></div>
