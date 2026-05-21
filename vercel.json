@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build --workspace client && mkdir -p dist && cp -r client/dist/* dist/",
+  "buildCommand": "npm run build --workspace client",
   "outputDirectory": "dist",
   "rewrites": [
     {
