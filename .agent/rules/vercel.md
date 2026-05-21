@@ -20,6 +20,11 @@ This project is a monorepo containing a Vite React client and an Express Node.js
   - To support both stateful local development (`app.listen()`) and serverless execution, the Express app setup must be defined in `server/src/app.js` and exported.
   - The local server starts via `server/src/index.js` (which calls `app.listen()` and initializes the stateful background worker).
   - The Vercel deployment imports `app` from `server/src/app.js` into the root-level `api/index.js` and exports it as a serverless function handler.
+- **Output Directory in Monorepos:** 
+  - When the Vercel framework preset is set to "Vite" (which is common for React/Vite client monorepos), Vercel expects the output folder to be named `dist` at the project root.
+  - Setting `"outputDirectory": "client/dist"` in `vercel.json` can be overridden by Vercel's automatic framework presets.
+  - To make deployment seamless out of the box, configure `buildCommand` to build the client and copy the outputs to the root `/dist` directory: `"npm run build --workspace client && mkdir -p dist && cp -r client/dist/* dist/"` and point `"outputDirectory": "dist"`.
+
 
 ## 2. Serverless Database Initialization
 - In a serverless function, database connections must be initialized dynamically on the first request rather than during a start-up hook.
