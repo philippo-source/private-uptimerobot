@@ -69,6 +69,13 @@ The project is fully pre-configured and optimized to run entirely on **Vercel** 
    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (to enable email down alerts)
    - `CRON_SECRET`: (Optional) A secure secret token of your choosing to protect the checks execution endpoint.
 
+### Vercel Preview Authentication (Important)
+
+By default, Vercel enables **Vercel Authentication** for Preview Deployments. This means if you visit a preview URL (e.g., `https://your-app-123xyz.vercel.app`), you will see a white screen asking you to "Log in with Vercel" instead of your UptimeRobot clone login screen.
+
+- To access your app without this barrier, use your main **Production URL** (e.g., `https://your-app.vercel.app`).
+- If you want Preview Deployments to be publicly accessible, go to your Vercel Project Dashboard -> **Settings** -> **Deployment Protection** and disable or configure **Vercel Authentication**.
+
 ### Configuring Background Monitor Checks (Cron)
 
 Because Vercel Serverless Functions are stateless and ephemeral, memory-based loops (`setInterval`) do not run continuously in production. Instead, a serverless-friendly cron mechanism is provided:
