@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -310,8 +310,26 @@ function UptimeSummaryPanel({ monitor, onRangeChange }) {
 function ResponseTimeChart({ monitor, customRange }) {
   const [hoverIndex, setHoverIndex] = useState(null);
   const [range, setRange] = useState("hour");
+  const prevCustomRange = useRef(customRange);
+
+  useEffect(() => {
+    if (!prevCustomRange.current && customRange) {
+      prevCustomRange.current = customRange;
+      return;
+    }
+    
+    if (
+      customRange &&
+      prevCustomRange.current &&
+      (customRange.start?.getTime() !== prevCustomRange.current.start?.getTime() ||
+       customRange.end?.getTime() !== prevCustomRange.current.end?.getTime())
+    ) {
+      setRange("custom");
+      prevCustomRange.current = customRange;
+    }
+  }, [customRange]);
+
   const now = new Date();
-  const effectiveRange = customRange ? "custom" : range;
   const rawChecks = monitor.checks
     .filter((check) => check.response_time_ms !== null && check.response_time_ms !== undefined)
     .sort((a, b) => new Date(a.checked_at) - new Date(b.checked_at));
@@ -332,7 +350,7 @@ function ResponseTimeChart({ monitor, customRange }) {
   }
 
   const points = (() => {
-    if (customRange) {
+    if (range === "custom" && customRange) {
       return rawChecks.filter((check) => {
         const checkedAt = new Date(check.checked_at);
         return checkedAt >= customRange.start && checkedAt <= customRange.end;
@@ -405,9 +423,9 @@ function ResponseTimeChart({ monitor, customRange }) {
         <div className="chart-actions">
           <select
             aria-label="Response time range"
-            value={effectiveRange}
+            value={range}
             onChange={(event) => {
-              if (event.target.value !== "custom") setRange(event.target.value);
+              setRange(event.target.value);
               setHoverIndex(null);
             }}
           >

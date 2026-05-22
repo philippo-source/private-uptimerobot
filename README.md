@@ -74,8 +74,20 @@ The project is fully pre-configured and optimized to run entirely on **Vercel** 
 Because Vercel Serverless Functions are stateless and ephemeral, memory-based loops (`setInterval`) do not run continuously in production. Instead, a serverless-friendly cron mechanism is provided:
 
 - **Checks Endpoint**: A stateless check runner is exposed at `/api/cron`.
-- **Set Up Vercel Cron**: To schedule checks to run automatically every minute, add a `crons` definition in your `vercel.json` or configure Vercel Cron in your project dashboard with:
-  - **Path**: `/api/cron`
-  - **Schedule**: `* * * * *` (Runs every minute)
+- **Set Up External Cron**: If you are on the Vercel Hobby (Free) plan, Vercel only allows running cron jobs once a day, which is not enough for an uptime monitor. Instead, you should use a free external service like [cron-job.org](https://cron-job.org/) to trigger checks:
+  - Create a free account on cron-job.org.
+  - Create a new cron job that pings `https://your-domain.vercel.app/api/cron` every minute.
+  - If you configured a `CRON_SECRET` in your Vercel project, make sure to add an HTTP Header in your cron-job.org settings: `Authorization: Bearer YOUR_CRON_SECRET`.
+- **Set Up Vercel Cron (Pro Plan)**: If you are on a paid Vercel Pro plan, you can schedule checks to run automatically every minute by adding a `crons` definition in your `vercel.json`:
+  ```json
+  {
+    "crons": [
+      {
+        "path": "/api/cron",
+        "schedule": "* * * * *"
+      }
+    ]
+  }
+  ```
 - **Securing Cron**: If a `CRON_SECRET` environment variable is configured in Vercel, the endpoint will require an `Authorization` header containing `Bearer <CRON_SECRET>` to trigger the checks.
 
