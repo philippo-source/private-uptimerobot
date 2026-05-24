@@ -362,15 +362,17 @@ function ResponseTimeChart({ monitor, customRange }) {
       return rawChecks.filter((check) => new Date(check.checked_at) >= start).slice(-40);
     }
 
-    if (range === "today") {
-      return Array.from({ length: 24 }, (_, hour) => {
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour);
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour + 1);
+    if (range === "24h") {
+      const hourMs = 60 * 60 * 1000;
+      return Array.from({ length: 24 }, (_, index) => {
+        const start = new Date(now.getTime() - (24 - index) * hourMs);
+        const end = new Date(now.getTime() - (23 - index) * hourMs);
         const bucketChecks = rawChecks.filter((check) => {
           const checkedAt = new Date(check.checked_at);
           return checkedAt >= start && checkedAt < end;
         });
-        return averageBucket(bucketChecks, start, `${hour.toString().padStart(2, "0")}:00`);
+        const hourLabel = start.getHours().toString().padStart(2, "0");
+        return averageBucket(bucketChecks, start, `${hourLabel}:00`);
       }).filter(Boolean);
     }
 
@@ -430,7 +432,7 @@ function ResponseTimeChart({ monitor, customRange }) {
             }}
           >
             <option value="hour">Last hour</option>
-            <option value="today">Today</option>
+            <option value="24h">Last 24 hours</option>
             <option value="month">Whole month</option>
             {customRange && <option value="custom">Selected range</option>}
           </select>
