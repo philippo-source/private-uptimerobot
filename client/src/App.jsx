@@ -121,14 +121,14 @@ function Sparkline({ checks = [] }) {
   const hoverBar = hoverIndex === null ? null : bars[hoverIndex];
 
   return (
-    <div className="sparkline">
+    <div className="sparkline" onMouseLeave={() => setHoverIndex(null)}>
       {bars.map((check, index) => (
         <span
           key={check.start.toISOString()}
           className={`spark-bar ${check.status === "down" ? "bad" : check.status === "idle" ? "idle" : ""}`}
           onFocus={() => setHoverIndex(index)}
+          onBlur={() => setHoverIndex(null)}
           onMouseEnter={() => setHoverIndex(index)}
-          onMouseLeave={() => setHoverIndex(null)}
           tabIndex="0"
         />
       ))}
@@ -174,13 +174,12 @@ function DetailSparklinePanel({ checks = [] }) {
         <h2>Last 24 hours<span>.</span></h2>
         <b className="detail-sparkline-uptime">{pct(uptime)}<small>Uptime</small></b>
       </div>
-      <div className="detail-sparkline-wrap">
+      <div className="detail-sparkline-wrap" onMouseLeave={() => setHoverIndex(null)}>
         {bars.map((bar, index) => (
           <div
             key={bar.start.toISOString()}
             className="detail-spark-col"
             onMouseEnter={() => setHoverIndex(index)}
-            onMouseLeave={() => setHoverIndex(null)}
           >
             <div
               className={`detail-spark-bar ${

@@ -10,6 +10,7 @@ A small UptimeRobot-style monitor dashboard with a React/Vite frontend, Node/Exp
 - Per-monitor interval editing, pause/resume, and delete.
 - Background checks from one server location.
 - Min, max, and average response times per monitor.
+- Automatic database storage optimization (downsamples checks older than 30 days into hourly aggregates to save ~98% space).
 - Incident creation and resolution, with a dedicated incidents page.
 - Email alert to `SUPPORT_EMAIL` when a monitor transitions down.
 
