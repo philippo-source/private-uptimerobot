@@ -617,7 +617,7 @@ small {
 .detail-sparkline-wrap {
   position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 3px;
   height: 60px;
 }
@@ -634,7 +634,7 @@ small {
 .detail-spark-bar {
   width: 100%;
   flex: 1;
-  border-radius: 3px 3px 0 0;
+  border-radius: 3px;
   background: var(--green);
   transition: opacity 0.1s;
 }
