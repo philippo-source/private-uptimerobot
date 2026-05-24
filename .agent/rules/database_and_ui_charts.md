@@ -7,6 +7,8 @@ This document contains learnings and guidelines from fixing data visualization b
 - **Sparkline Spacing & Grid Layout:** 
   - To prevent sparklines from overlapping with text elements (such as uptime percentage), ensure the column layout in the grid has enough dedicated width.
   - A sparkline of 24 bars of `4px` width plus 23 gaps of `3px` width equals `165px`. The grid column must be sized to at least `200px` (or via CSS variables/flex-shrink) to prevent clipping.
+- **Flex Stretching for Column Layouts:** If individual bars are wrapped inside column flex containers alongside labels (e.g. hourly labels at the bottom, bars on top), avoid using `align-items: flex-end` on the main wrapper. This collapses the columns to the minimum height of the text labels, leaving the bars (with `flex: 1`) with `0` height. Instead, use `align-items: stretch` on the wrapper to force columns to occupy the full wrapper height, letting the bars dynamically fill the remaining vertical space beautifully.
+
 
 ## 2. Rolling 24-Hour Time Windows
 - **Rolling vs. Calendar-Day Buckets:** When plotting a "Last 24 Hours" chart, do not group checks by calendar hour indexes (0–23 of the current day) as it will reset at midnight.
