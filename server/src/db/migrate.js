@@ -45,6 +45,7 @@ const statements = [
     checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   `CREATE INDEX IF NOT EXISTS checks_monitor_checked_idx ON checks (monitor_id, checked_at DESC)`,
+  `ALTER TABLE checks ADD COLUMN IF NOT EXISTS weight INTEGER NOT NULL DEFAULT 1`,
   `CREATE TABLE IF NOT EXISTS incidents (
     id BIGSERIAL PRIMARY KEY,
     monitor_id UUID NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,

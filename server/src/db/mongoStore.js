@@ -100,8 +100,8 @@ async function statsFor(collection, monitorIds) {
           min: { $min: { $cond: [{ $eq: ["$status", "up"] }, "$response_time_ms", null] } },
           max: { $max: { $cond: [{ $eq: ["$status", "up"] }, "$response_time_ms", null] } },
           avg: { $avg: { $cond: [{ $eq: ["$status", "up"] }, "$response_time_ms", null] } },
-          checks: { $sum: 1 },
-          up: { $sum: { $cond: [{ $eq: ["$status", "up"] }, 1, 0] } }
+          checks: { $sum: { $ifNull: ["$weight", 1] } },
+          up: { $sum: { $cond: [{ $eq: ["$status", "up"] }, { $ifNull: ["$weight", 1] }, 0] } }
         }
       }
     ])
@@ -329,7 +329,8 @@ export const mongoStore = {
       status_code: result.statusCode,
       response_time_ms: result.responseTimeMs,
       error: result.error,
-      checked_at: now
+      checked_at: now,
+      weight: 1
     });
     await monitors.updateOne(
       { id: monitor.id },
@@ -385,5 +386,65 @@ export const mongoStore = {
       { id },
       { $set: { status: "resolved", resolved_at: new Date() } }
     );
+  },
+
+  async pruneOldChecks(days = 30) {
+    const database = await getMongoDb();
+    const checksCollection = collections(database).checks;
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const oldChecks = await checksCollection.find({ checked_at: { $lt: cutoffDate } }).toArray();
+    if (oldChecks.length === 0) return true;
+
+    const hourlyMap = new Map();
+    for (const check of oldChecks) {
+      const d = new Date(check.checked_at);
+      d.setMinutes(0, 0, 0);
+      const key = `${check.monitor_id}-${d.getTime()}`;
+      
+      if (!hourlyMap.has(key)) {
+        hourlyMap.set(key, {
+          monitor_id: check.monitor_id,
+          checked_at: d,
+          status_code: check.status_code,
+          response_time_ms: check.response_time_ms || 0,
+          error: check.error,
+          weight: check.weight || 1,
+          count: 1,
+          downCount: check.status === "down" ? 1 : 0
+        });
+      } else {
+        const aggr = hourlyMap.get(key);
+        aggr.response_time_ms += (check.response_time_ms || 0);
+        aggr.count += 1;
+        aggr.weight += (check.weight || 1);
+        if (check.status === "down") aggr.downCount += 1;
+        if (check.status_code) aggr.status_code = Math.max(aggr.status_code || 0, check.status_code);
+        if (check.error) aggr.error = check.error;
+      }
+    }
+
+    const newChecks = [];
+    for (const aggr of hourlyMap.values()) {
+      newChecks.push({
+        id: crypto.randomUUID(),
+        monitor_id: aggr.monitor_id,
+        status: aggr.downCount > 0 ? "down" : "up",
+        status_code: aggr.status_code,
+        response_time_ms: aggr.count > 0 ? Math.round(aggr.response_time_ms / aggr.count) : 0,
+        error: aggr.error,
+        checked_at: aggr.checked_at,
+        weight: aggr.weight
+      });
+    }
+
+    await checksCollection.deleteMany({ checked_at: { $lt: cutoffDate } });
+    if (newChecks.length > 0) {
+      const chunkSize = 1000;
+      for (let i = 0; i < newChecks.length; i += chunkSize) {
+         await checksCollection.insertMany(newChecks.slice(i, i + chunkSize));
+      }
+    }
+    return true;
   }
 };

@@ -148,6 +148,13 @@ export async function startMonitorWorker() {
     scheduleMonitor(monitor);
   }
   console.log(`Monitor worker scheduled ${monitors.length} monitor(s).`);
+
+  const pruneJob = setInterval(() => {
+    if (typeof store.pruneOldChecks === "function") {
+      store.pruneOldChecks(30).catch((e) => console.error("Prune error:", e));
+    }
+  }, 24 * 60 * 60 * 1000);
+  timers.set("prune", pruneJob);
 }
 
 export function stopMonitorWorker() {
@@ -177,5 +184,9 @@ export async function runCronChecks() {
   }
 
   await Promise.all(promises);
+
+  if (typeof store.pruneOldChecks === "function") {
+    store.pruneOldChecks(30).catch((error) => console.error("Prune error:", error));
+  }
 }
 

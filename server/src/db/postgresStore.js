@@ -60,8 +60,8 @@ async function monitorWithStats(where = "", params = []) {
             MIN(c.response_time_ms) FILTER (WHERE c.status = 'up') AS min_response_ms,
             MAX(c.response_time_ms) FILTER (WHERE c.status = 'up') AS max_response_ms,
             AVG(c.response_time_ms) FILTER (WHERE c.status = 'up') AS avg_response_ms,
-            COUNT(c.id) AS total_checks,
-            COALESCE(ROUND(100.0 * COUNT(c.id) FILTER (WHERE c.status = 'up') / NULLIF(COUNT(c.id), 0), 3), 0) AS uptime_pct,
+            COALESCE(SUM(c.weight), 0) AS total_checks,
+            COALESCE(ROUND(100.0 * SUM(c.weight) FILTER (WHERE c.status = 'up') / NULLIF(SUM(c.weight), 0), 3), 0) AS uptime_pct,
             COALESCE((
               SELECT json_agg(json_build_object(
                 'status', rc.status,
@@ -97,7 +97,7 @@ export const postgresStore = {
       `SELECT COUNT(*)::int AS count FROM incidents WHERE started_at >= NOW() - INTERVAL '24 hours'`
     );
     const uptime = await query(
-      `SELECT COALESCE(ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'up') / NULLIF(COUNT(*), 0), 3), 100) AS uptime
+      `SELECT COALESCE(ROUND(100.0 * SUM(weight) FILTER (WHERE status = 'up') / NULLIF(SUM(weight), 0), 3), 100) AS uptime
        FROM checks
        WHERE checked_at >= NOW() - INTERVAL '24 hours'`
     );
@@ -241,8 +241,8 @@ export const postgresStore = {
 
   async recordCheck(monitor, result) {
     await query(
-      `INSERT INTO checks (monitor_id, status, status_code, response_time_ms, error)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO checks (monitor_id, status, status_code, response_time_ms, error, weight)
+       VALUES ($1, $2, $3, $4, $5, 1)`,
       [
         monitor.id,
         result.status,
@@ -302,5 +302,34 @@ export const postgresStore = {
        WHERE id = $1`,
       [id]
     );
+  },
+
+  async pruneOldChecks(days = 30) {
+    await query(
+      `WITH to_delete AS (
+         SELECT id FROM checks WHERE checked_at < NOW() - $1::interval
+       ),
+       deleted AS (
+         DELETE FROM checks WHERE id IN (SELECT id FROM to_delete)
+       ),
+       aggregates AS (
+         SELECT 
+           monitor_id,
+           date_trunc('hour', checked_at) AS hour_bucket,
+           CASE WHEN COUNT(*) FILTER (WHERE status = 'down') > 0 THEN 'down' ELSE 'up' END AS status,
+           MAX(status_code) AS status_code,
+           ROUND(AVG(response_time_ms))::int AS response_time_ms,
+           MAX(error) AS error,
+           SUM(weight) AS total_weight
+         FROM checks
+         WHERE id IN (SELECT id FROM to_delete)
+         GROUP BY monitor_id, date_trunc('hour', checked_at)
+       )
+       INSERT INTO checks (monitor_id, status, status_code, response_time_ms, error, checked_at, weight)
+       SELECT monitor_id, status, status_code, response_time_ms, error, hour_bucket, total_weight
+       FROM aggregates`,
+      [`${days} days`]
+    );
+    return true;
   }
 };
