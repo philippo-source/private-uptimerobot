@@ -585,6 +585,116 @@ small {
   margin-bottom: 34px;
 }
 
+/* ── Detail page 24-hour sparkline ───────────────────────── */
+.detail-sparkline-panel {
+  margin-bottom: 34px;
+}
+
+.detail-sparkline-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.detail-sparkline-head h2 {
+  margin: 0;
+}
+
+.detail-sparkline-uptime {
+  font-size: 22px;
+  color: var(--green);
+}
+
+.detail-sparkline-uptime small {
+  display: inline;
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.detail-sparkline-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 60px;
+}
+
+.detail-spark-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 6px;
+  cursor: default;
+}
+
+.detail-spark-bar {
+  width: 100%;
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: var(--green);
+  transition: opacity 0.1s;
+}
+
+.detail-spark-bar.bad {
+  background: var(--red);
+}
+
+.detail-spark-bar.idle {
+  background: #344154;
+}
+
+.detail-spark-bar.hovered {
+  opacity: 0.75;
+}
+
+.detail-spark-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* only show every 3rd label to avoid clutter */
+.detail-spark-col:not(:nth-child(3n+1)) .detail-spark-label {
+  visibility: hidden;
+}
+
+.detail-spark-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  max-width: 260px;
+  padding: 10px 13px;
+  border-radius: 5px;
+  background: #121b29;
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  pointer-events: none;
+}
+
+.detail-spark-tooltip span,
+.detail-spark-tooltip b {
+  display: block;
+  white-space: nowrap;
+}
+
+.detail-spark-tooltip span {
+  color: #a9bbd8;
+  font-size: 14px;
+}
+
+.detail-spark-tooltip b {
+  margin-top: 4px;
+  font-size: 15px;
+}
+
 .metric-grid strong {
   display: block;
   margin-bottom: 10px;

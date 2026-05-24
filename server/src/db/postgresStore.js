@@ -74,7 +74,7 @@ async function monitorWithStats(where = "", params = []) {
                 WHERE monitor_id = m.id
                   AND checked_at >= NOW() - INTERVAL '24 hours'
                 ORDER BY checked_at ASC
-                LIMIT 96
+                LIMIT 1500
               ) rc
             ), '[]'::json) AS recent_checks
      FROM monitors m

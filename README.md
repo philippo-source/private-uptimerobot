@@ -1,5 +1,7 @@
 # UptimeRobot Clone
 
+![Dashboard](dashboard.png)
+
 A small UptimeRobot-style monitor dashboard with a React/Vite frontend, Node/Express backend, and Postgres or MongoDB persistence.
 
 ## Features

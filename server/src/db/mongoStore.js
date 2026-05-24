@@ -185,7 +185,7 @@ export const mongoStore = {
     const recentMap = new Map(monitorIds.map((id) => [id, []]));
     for (const check of recentRows) {
       const bucket = recentMap.get(check.monitor_id);
-      if (bucket && bucket.length < 96) bucket.push(check);
+      if (bucket) bucket.push(check);
     }
     return rows.map((row) => serializeMonitor(row, stats.get(row.id), recentMap.get(row.id) || []));
   },

@@ -144,6 +144,75 @@ function Sparkline({ checks = [] }) {
   );
 }
 
+function DetailSparklinePanel({ checks = [] }) {
+  const [hoverIndex, setHoverIndex] = useState(null);
+  const now = Date.now();
+  const hourMs = 60 * 60 * 1000;
+  const bars = Array.from({ length: 24 }, (_, index) => {
+    const start = new Date(now - (24 - index) * hourMs);
+    const end = new Date(now - (23 - index) * hourMs);
+    const hourChecks = checks.filter((check) => {
+      const checkedAt = new Date(check.checked_at).getTime();
+      return checkedAt >= start.getTime() && checkedAt < end.getTime();
+    });
+    const hasDown = hourChecks.some((check) => check.status === "down");
+    return {
+      start,
+      end,
+      checks: hourChecks,
+      status: hourChecks.length === 0 ? "idle" : hasDown ? "down" : "up"
+    };
+  });
+  const checkedBars = bars.filter((bar) => bar.checks.length > 0);
+  const upBars = checkedBars.filter((bar) => bar.status === "up").length;
+  const uptime = checkedBars.length ? (upBars / checkedBars.length) * 100 : 0;
+  const hoverBar = hoverIndex === null ? null : bars[hoverIndex];
+
+  return (
+    <div className="panel detail-sparkline-panel">
+      <div className="detail-sparkline-head">
+        <h2>Last 24 hours<span>.</span></h2>
+        <b className="detail-sparkline-uptime">{pct(uptime)}<small>Uptime</small></b>
+      </div>
+      <div className="detail-sparkline-wrap">
+        {bars.map((bar, index) => (
+          <div
+            key={bar.start.toISOString()}
+            className="detail-spark-col"
+            onMouseEnter={() => setHoverIndex(index)}
+            onMouseLeave={() => setHoverIndex(null)}
+          >
+            <div
+              className={`detail-spark-bar ${
+                bar.status === "down" ? "bad" : bar.status === "idle" ? "idle" : ""
+              }${hoverIndex === index ? " hovered" : ""}`}
+            />
+            <span className="detail-spark-label">
+              {bar.start.getHours().toString().padStart(2, "0")}
+            </span>
+          </div>
+        ))}
+        {hoverBar && (
+          <div
+            className="detail-spark-tooltip"
+            style={{ left: `${(hoverIndex / 24) * 100}%` }}
+          >
+            <span>{tooltipRange(hoverBar.start, hoverBar.end)}</span>
+            <b>
+              {hoverBar.status === "idle"
+                ? "No checks"
+                : hoverBar.status === "up"
+                ? "Up"
+                : "Down"}{" "}
+              — {hoverBar.checks.length} check{hoverBar.checks.length !== 1 ? "s" : ""}
+            </b>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function recentUptime(checks = [], fallback = 0) {
   if (!checks.length) return fallback;
   const up = checks.filter((check) => check.status === "up").length;
@@ -867,6 +936,7 @@ function MonitorDetail({ id, back }) {
         <div className="panel"><h2>Last check</h2><strong>{timeAgo(monitor.lastCheckedAt)}</strong><p>Checked every {monitor.intervalSeconds / 60} min</p></div>
         <div className="panel"><h2>Response times</h2><div className="triple"><b>{ms(monitor.stats.min)}<small>Min</small></b><b>{ms(monitor.stats.avg)}<small>Average</small></b><b>{ms(monitor.stats.max)}<small>Maximum</small></b></div></div>
       </div>
+      <DetailSparklinePanel checks={monitor.checks} />
       <UptimeSummaryPanel monitor={monitor} onRangeChange={setSelectedRange} />
       <ResponseTimeChart monitor={monitor} customRange={selectedRange} />
       <div className="panel">
